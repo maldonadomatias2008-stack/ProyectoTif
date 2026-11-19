@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>ESET BIOS v1.98</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+  <style>
+    /* ── BIOS (todo scopeado a #bios para no pisar a los sistemas) ── */
+    html, body { height: 100%; margin: 0; background: #000; }
+    #bios {
+      position: fixed; inset: 0; z-index: 10000; overflow: auto; box-sizing: border-box;
+      padding: 20px 24px; background: #000; color: #c0c0c0;
+      font: 16px/1.4 'Courier New', Consolas, monospace; user-select: none; transition: opacity .4s;
+    }
+    #bios.menu { background: #0000a8; color: #fff; }
+    #bios.fuera { opacity: 0; pointer-events: none; }
+    #bios .hl { color: #fff; font-weight: bold; }
+    #bios .ok { color: #5f5; }
+    #bios .err { color: #f55; }
+    #bios .parp::after { content: '_'; animation: bios-parp 1s steps(1) infinite; }
+    @keyframes bios-parp { 50% { opacity: 0; } }
+    #bios-post div { min-height: 1.4em; white-space: pre-wrap; }
+    #bios-menu[hidden] { display: none; }
+    .bios-titulo { text-align: center; background: #c0c0c0; color: #0000a8; font-weight: bold; padding: 2px 0; margin-bottom: 14px; }
+    .bios-caja { border: 2px double #fff; padding: 10px 6px; margin-bottom: 14px; }
+    .bios-op {
+      display: flex; justify-content: space-between; gap: 12px; width: 100%; padding: 2px 10px;
+      border: 0; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer;
+    }
+    .bios-op.sel { background: #c0c0c0; color: #0000a8; }
+    .bios-det { min-height: 6.5em; padding: 0 6px; }
+    .bios-det .adv { color: #ff0; }
+    .bios-pie { margin-top: 10px; padding-top: 6px; border-top: 1px solid #aaa; font-size: .85em; color: #cfcfff; }
+    @media (max-width: 600px) { #bios { font-size: 13px; padding: 12px; } .bios-op { flex-wrap: wrap; gap: 0; } }
+  </style>
+</head>
+<body>
+
+  <!-- ═════════════ BIOS ═════════════ -->
+  <div id="bios">
+    <div id="bios-post"></div>
+    <div id="bios-menu" hidden>
+      <div class="bios-titulo">ESET BIOS SETUP UTILITY · Boot Manager</div>
+      <div class="bios-caja">
+        <div class="hl" style="padding:0 10px 8px">Elegí con qué sistema operativo querés iniciar:</div>
+        <div id="bios-lista"></div>
+      </div>
+      <div class="bios-det" id="bios-det"></div>
+      <div class="bios-pie">↑ ↓ Mover &nbsp;·&nbsp; ENTER Iniciar &nbsp;·&nbsp; 1 / 2 Acceso directo &nbsp;·&nbsp; También podés tocar una opción</div>
+    </div>
+  </div>
+
+  <!-- ═════════════ SISTEMA 1: WebOS (el normal) ═════════════ -->
+  <template id="tpl-webos">
+    <main id="desktop"></main>
+
+    <footer id="taskbar">
+      <div class="dropup">
+        <button class="btn btn-primary btn-sm" data-bs-toggle="dropdown"><i class="bi bi-windows"></i> Inicio</button>
+        <ul id="start" class="dropdown-menu shadow"></ul>
+      </div>
+      <div id="apps" class="d-flex gap-1 flex-grow-1 ms-2"></div>
+      <span id="clock" class="small"></span>
+    </footer>
+  </template>
+
+  <!-- ═════════════ SISTEMA 2: ESET-OS 98 · Edición Tilt ═════════════ -->
+  <template id="tpl-tilt">
+    <div id="cursor">🖱️</div>
+    <main id="desktop"></main>
+
+    <footer id="taskbar">
+      <div class="dropup">
+        <button class="btn btn-primary btn-sm" data-bs-toggle="dropdown"><i class="bi bi-windows"></i> Inicio</button>
+        <ul id="start" class="dropdown-menu shadow"></ul>
+      </div>
+      <div id="apps" class="d-flex gap-1 flex-grow-1 ms-2"></div>
+      <button class="btn btn-outline-secondary btn-sm me-2" onclick="modoPiedad()">🙏 Modo piedad</button>
+      <i class="bi bi-wifi me-2" onclick="aviso('Conectado a ESET_Alumnos (sin internet)')"></i>
+      <span class="small me-2"><i class="bi bi-battery"></i> 1%</span>
+      <span id="clock" class="small"></span>
+    </footer>
+
+    <div class="modal fade" id="modalTilt" tabindex="-1">
+      <div class="modal-dialog"><div class="modal-content">
+        <div class="modal-header"><h5 class="modal-title" id="m-titulo"></h5></div>
+        <div class="modal-body" id="m-texto"></div>
+        <div class="modal-footer"><button class="btn btn-secondary" id="m-b2"></button><button class="btn btn-primary" id="m-b1"></button></div>
+      </div></div>
+    </div>
+    <div class="toast-container" id="avisos"></div>
+
+    <div id="azul">
+      <h1>:(</h1>
+      <p>Tu PC tuvo un problema y debe reiniciarse.</p>
+      <p>Código: SE_ACABO_EL_RECREO (0x0000TOCO)</p>
+      <p id="cuenta">Reiniciando en 4...</p>
+    </div>
+    <div id="upd">
+      <div class="spinner-border"></div>
+      <h3 id="upd-t">Trabajando en las actualizaciones</h3>
+      <div class="progress barra-upd"><div class="progress-bar" id="upd-b"></div></div>
+      <p>No apagues el equipo</p>
+    </div>
+    <div id="boot">
+      <i class="bi bi-windows logo-boot"></i>
+      <h2>ESET-OS 98</h2>
+      <div class="progress barra-upd mx-auto my-3"><div class="progress-bar" id="relleno"></div></div>
+      <p id="texto-boot">Cargando... 0%</p>
+    </div>
+  </template>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+  <!-- ═════════════ Lógica de la BIOS ═════════════ -->
+  <script>
+  (() => {
+    // Para agregar un sistema nuevo: sumá un objeto acá y un <template> arriba.
+    const SISTEMAS = [
+      { nombre: 'WebOS', disco: 'HDD0 · Samsung 256 GB', tpl: 'tpl-webos', titulo: 'WebOS',
+        css: 'webos/styles.css', scripts: ['webos/app.js'],
+        desc: 'Sistema operativo normal: escritorio, ventanas, bloc de notas, calculadora y configuración.<br>Estable, ordenado y sin sorpresas.' },
+      { nombre: 'ESET-OS 98 · Edición Tilt', disco: 'HDD1 · ESET 4 GB (98% lleno)', tpl: 'tpl-tilt', titulo: 'ESET-OS 98 · Edición Tilt',
+        css: 'tilt/estilos.css', scripts: ['tilt/imagenes.js', 'tilt/script.js'],
+        desc: 'El sistema del colegio: programas que no responden, errores en cadena, memes y un cursor con lag.<br><span class="adv">⚠ Puede provocar tilt, rabia y pérdida de la fe en la tecnología.</span>' },
+    ];
+
+    const bios = document.getElementById('bios'), postEl = document.getElementById('bios-post'),
+          menuEl = document.getElementById('bios-menu'), listaEl = document.getElementById('bios-lista'),
+          detEl = document.getElementById('bios-det');
+    const sleep = ms => new Promise(r => setTimeout(r, ms));
+    const loadCSS = href => new Promise((ok, no) => { const l = document.createElement('link'); l.rel = 'stylesheet'; l.href = href; l.onload = ok; l.onerror = () => no(href); document.head.append(l); });
+    const loadJS = src => new Promise((ok, no) => { const s = document.createElement('script'); s.src = src; s.onload = ok; s.onerror = () => no(src); document.body.append(s); });
+    let fase = 'post', sel = 0, saltar = false;
+
+    const add = (txt, cls = '') => { const d = document.createElement('div'); d.textContent = txt; if (cls) d.className = cls; postEl.append(d); return d; };
+
+    /* 1) Pantalla de arranque (POST) */
+    async function post() {
+      const lineas = [
+        ['ESET BIOS v1.98 · Copyright (C) 1998 ESET Technologies', 400, 'hl'],
+        ['', 100],
+        ['CPU: 1 neurona @ 33 MHz (compartida)', 300],
+        ['__MEM__', 0],
+        ['Teclado ........ detectado', 250],
+        ['Mouse .......... detectado (con lag)', 250],
+        ['Buscando discos de arranque...', 600],
+        ['  HDD0 ........ ' + SISTEMAS[0].nombre, 300],
+        ['  HDD1 ........ ' + SISTEMAS[1].nombre, 300],
+        ['', 100],
+        ['Se encontraron ' + SISTEMAS.length + ' sistemas operativos.', 500, 'ok'],
+      ];
+      for (const [t, ms, c] of lineas) {
+        if (saltar) break;
+        if (t === '__MEM__') {
+          const m = add('');
+          for (let k = 0; k <= 4096 && !saltar; k += 128) { m.textContent = 'Prueba de memoria: ' + k + ' MB'; await sleep(25); }
+          m.textContent = 'Prueba de memoria: 4096 MB OK (3,9 GB ocupados por memes)';
+        } else add(t, c);
+        await sleep(ms);
+      }
+      menu();
+    }
+
+    /* 2) Menú de arranque */
+    function menu() {
+      fase = 'menu';
+      postEl.hidden = true; menuEl.hidden = false; bios.classList.add('menu');
+      dibujar();
+    }
+    // La lista se arma una sola vez; después solo se cambia la clase (así el clic nunca se pierde)
+    listaEl.innerHTML = SISTEMAS.map((s, i) =>
+      `<button type="button" class="bios-op" data-i="${i}"><span class="fl"></span><span>[${i + 1}] ${s.nombre}</span><span class="dsk">${s.disco}</span></button>`).join('');
+    function dibujar() {
+      listaEl.querySelectorAll('.bios-op').forEach((b, i) => {
+        b.classList.toggle('sel', i === sel);
+        b.querySelector('.fl').textContent = i === sel ? '▶' : '\u00a0';
+      });
+      detEl.innerHTML = `<div class="hl">Detalles:</div>${SISTEMAS[sel].desc}`;
+    }
+    listaEl.addEventListener('pointerover', e => { const b = e.target.closest('.bios-op'); if (b && fase === 'menu' && +b.dataset.i !== sel) { sel = +b.dataset.i; dibujar(); } });
+    listaEl.addEventListener('click', e => { const b = e.target.closest('.bios-op'); if (b) { sel = +b.dataset.i; dibujar(); iniciar(sel); } });
+
+    /* 3) Arrancar el sistema elegido */
+    async function iniciar(i) {
+      if (fase !== 'menu') return;
+      fase = 'boot';
+      const s = SISTEMAS[i];
+      menuEl.hidden = true; postEl.hidden = false; postEl.innerHTML = ''; bios.classList.remove('menu');
+      add('Arrancando desde ' + s.disco + '...');
+      await sleep(600);
+      add('Cargando ' + s.nombre + '...', 'hl');
+      await sleep(600);
+      try {
+        await loadCSS(s.css);
+        document.body.append(document.getElementById(s.tpl).content.cloneNode(true));
+        for (const src of s.scripts) await loadJS(src);
+        document.title = s.titulo;
+      } catch (falta) {
+        fase = 'error';
+        add('');
+        add('ERROR: disco sin sistema o dañado. No se pudo leer: ' + falta, 'err');
+        add('Revisá que las carpetas "webos" y "tilt" estén subidas junto al index.html (con esos nombres, en minúscula).');
+        add('Si abrís el archivo desde otra carpeta o desde un .zip sin descomprimir, tampoco va a andar.');
+        const d = add('Apretá una tecla para reiniciar', 'parp');
+        return;
+      }
+      bios.classList.add('fuera');
+      setTimeout(() => bios.remove(), 450);
+    }
+
+    /* Teclado y toque */
+    document.addEventListener('keydown', e => {
+      if (fase === 'post') { saltar = true; return; }
+      if (fase === 'error') { location.reload(); return; }
+      if (fase !== 'menu') return;
+      if (e.key === 'ArrowDown') { sel = (sel + 1) % SISTEMAS.length; dibujar(); e.preventDefault(); }
+      else if (e.key === 'ArrowUp') { sel = (sel - 1 + SISTEMAS.length) % SISTEMAS.length; dibujar(); e.preventDefault(); }
+      else if (e.key === 'Enter') iniciar(sel);
+      else if (/^[1-9]$/.test(e.key) && SISTEMAS[e.key - 1]) { sel = e.key - 1; iniciar(sel); }
+    });
+    bios.addEventListener('pointerdown', () => { if (fase === 'post') saltar = true; if (fase === 'error') location.reload(); });
+
+    post();
+  })();
+  </script>
+</body>
+</html>

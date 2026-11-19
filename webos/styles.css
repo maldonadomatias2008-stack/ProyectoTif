@@ -1,0 +1,35 @@
+html, body { height: 100%; margin: 0; overflow: hidden; font-family: 'Segoe UI', system-ui, sans-serif; }
+
+/* Escritorio e íconos */
+#desktop {
+  position: fixed; inset: 0 0 44px 0; padding: .5rem;
+  background: radial-gradient(circle at 30% 35%, #60b4ff, #0a3d91 60%, #051937);
+  display: grid; grid-template-rows: repeat(auto-fill, 90px); grid-auto-columns: 84px; grid-auto-flow: column;
+}
+.icon { background: none; border: 0; border-radius: .3rem; color: #fff; text-shadow: 0 1px 3px #000; }
+.icon:hover { background: rgba(255, 255, 255, .2); }
+.icon i { display: block; font-size: 2rem; }
+.icon span { font-size: .75rem; }
+
+/* Barra de tareas */
+#taskbar {
+  position: fixed; inset: auto 0 0 0; height: 44px; z-index: 2000;
+  display: flex; align-items: center; padding: 0 .5rem;
+  background: var(--bs-tertiary-bg); border-top: 1px solid var(--bs-border-color);
+}
+#apps button { position: relative; border: 0; border-radius: .3rem; background: none; font-size: 1.3rem; }
+#apps button:hover { background: var(--bs-secondary-bg); }
+#apps button.on::after { content: ''; position: absolute; left: 25%; right: 25%; bottom: 0; height: 3px; border-radius: 2px; background: var(--bs-primary); }
+
+/* Ventanas */
+.win { position: absolute; display: flex; flex-direction: column; overflow: hidden; border: 1px solid var(--bs-border-color); border-radius: .5rem; background: var(--bs-body-bg); color: var(--bs-body-color); }
+.win.max { inset: 0 !important; width: auto !important; height: auto !important; border-radius: 0; }
+.titlebar { display: flex; align-items: center; gap: .5rem; height: 32px; padding-left: .6rem; background: var(--bs-tertiary-bg); user-select: none; }
+.titlebar button { width: 44px; height: 100%; border: 0; background: none; color: inherit; }
+.titlebar button:hover { background: var(--bs-secondary-bg); }
+.titlebar .close:hover { background: #e81123; color: #fff; }
+.content { flex: 1; overflow: auto; }
+
+/* Apps */
+.calc { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; padding: 8px; }
+.wall { width: 64px; height: 40px; border: 0; border-radius: .4rem; }
